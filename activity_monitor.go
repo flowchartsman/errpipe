@@ -1,19 +1,13 @@
 package main
 
 import (
+	"fmt"
+	"math"
 	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
-
-type uiTick time.Time
-
-func doUITick() tea.Cmd {
-	return tea.Tick(150*time.Millisecond, func(t time.Time) tea.Msg {
-		return uiTick(t)
-	})
-}
 
 type activityMonitor struct {
 	idle    bool
@@ -63,10 +57,53 @@ func (am *activityMonitor) Update(msg tea.Msg) (*activityMonitor, tea.Cmd) {
 	return am, nil
 }
 
-// update better?
 func (am *activityMonitor) Tick() tea.Cmd {
 	am.lastMsg = time.Now()
 	am.idle = false
 	am.plot.Measure(1)
 	return nil
+}
+
+func fmtDuration(duration time.Duration) string {
+	hours := int64(math.Mod(duration.Hours(), 24))
+	minutes := int64(math.Mod(duration.Minutes(), 60))
+	seconds := int64(math.Mod(duration.Seconds(), 60))
+	milli := duration.Milliseconds() % 1000 / 100
+
+	var sb strings.Builder
+	if hours > 0 {
+		sb.WriteString(fmt.Sprintf("%dh ", hours))
+	}
+	if minutes > 0 || hours > 0 {
+		sb.WriteString(fmt.Sprintf("%dm ", minutes))
+	}
+	sb.WriteString(fmt.Sprintf("%d", seconds))
+	if minutes == 0 {
+		sb.WriteString(fmt.Sprintf(".%d", milli))
+	}
+	sb.WriteString("s")
+
+	return sb.String()
+}
+
+func iter(buckets []int, start int, f func(v int)) {
+	c := start
+	for {
+		f(buckets[c])
+		c++
+		if c == len(buckets) {
+			c = 0
+		}
+		if c == start {
+			break
+		}
+	}
+}
+
+func trns(v, oldmax, newmax int) int {
+	nv := v * newmax / oldmax
+	if v > 0 && nv == 0 {
+		return 1
+	}
+	return nv
 }

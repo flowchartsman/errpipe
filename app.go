@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -82,4 +84,12 @@ func (m appModel) nextMessage() tea.Cmd {
 		}
 		return logMessage{lvl: final}
 	}
+}
+
+type uiTick time.Time
+
+func doUITick() tea.Cmd {
+	return tea.Tick(150*time.Millisecond, func(t time.Time) tea.Msg {
+		return uiTick(t)
+	})
 }

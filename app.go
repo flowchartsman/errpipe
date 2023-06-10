@@ -5,28 +5,34 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-type appConfig struct{}
-
-type appModel struct {
-	messages <-chan logMessage
-	levels   map[logLevel]bool
-	width    int
-	height   int
-	am       *activityMonitor
+type appConfig struct {
+	displayWarning bool
+	displayInfo    bool
 }
 
-func newApp(levels map[logLevel]bool) appModel {
+type appModel struct {
+	messageQueue <-chan logMessage
+	levels       map[logLevel]bool
+	width        int
+	height       int
+	am           *activityMonitor
+}
+
+func newApp(config appConfig) appModel {
 	return appModel{
-		messages: newMessageReader(),
-		levels:   levels,
-		am:       NewActivityMonitor(10),
+		messageQueue: newMessageReader(),
+		levels: map[logLevel]bool{
+			lvlError: true,
+			lvlWarn:  config.displayWarning,
+			lvlInfo:  config.displayInfo,
+		},
+		am: NewActivityMonitor(10),
 	}
 }
 
 func (m appModel) Init() tea.Cmd {
 	return tea.Batch(
 		m.nextMessage(),
-		// m.am.Init(),
 		doUITick(),
 	)
 }
@@ -37,6 +43,9 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width, m.height = msg.Width, msg.Height
 		return m, nil
 	case logMessage:
+		if msg.lvl == final {
+			return m, tea.Quit
+		}
 		return m, tea.Batch(
 			m.am.Tick(),
 			m.Filter(msg),
@@ -45,9 +54,6 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
-			// need a channel that can be closed and shutdown reader and waiter
-			// or turn off signal handling
-			// os.Exit(130)
 			return m, tea.Quit
 		}
 		return m, nil
@@ -70,11 +76,10 @@ func (m appModel) View() string {
 
 func (m appModel) nextMessage() tea.Cmd {
 	return func() tea.Msg {
-		msg, ok := <-m.messages
+		msg, ok := <-m.messageQueue
 		if ok {
 			return msg
 		}
-		println("pipe complete")
-		return tea.Quit
+		return logMessage{lvl: final}
 	}
 }

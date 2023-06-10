@@ -7,6 +7,7 @@ const (
 	lvlInfo
 	lvlWarn
 	lvlError
+	final
 )
 
 type logMessage struct {

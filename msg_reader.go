@@ -74,11 +74,14 @@ func newMessageReader() <-chan logMessage {
 		sc := bufio.NewScanner(os.Stdin)
 		for sc.Scan() {
 			rawMsg := stripansi.Strip(sc.Text())
-			if isContinuation(rawMsg) {
-				out <- logMessage{lastLvl, rawMsg}
-				continue
-			}
+			// if isContinuation(rawMsg) {
+			// 	out <- logMessage{lastLvl, rawMsg}
+			// 	continue
+			// }
 			msg := getLeveledMsg(rawMsg)
+			if msg.lvl == lvlNone {
+				msg.lvl = lastLvl
+			}
 			lastLvl = msg.lvl
 			out <- msg
 		}

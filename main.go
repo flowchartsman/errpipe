@@ -9,22 +9,12 @@ import (
 )
 
 func main() {
-	logLevels := map[logLevel]bool{lvlError: true}
-	flag.Func("w", "include warnings", lvlFlag(lvlWarn, logLevels))
-	flag.Func("i", "include info", lvlFlag(lvlWarn, logLevels))
+	config := appConfig{}
+	flag.BoolVar(&config.displayWarning, "w", false, "display warnings")
+	flag.BoolVar(&config.displayInfo, "i", false, "display info")
 	flag.Parse()
-	if _, err := tea.NewProgram(newApp(logLevels)).Run(); err != nil {
+	if _, err := tea.NewProgram(newApp(config)).Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
-	}
-}
-
-func lvlFlag(lvl logLevel, m map[logLevel]bool) func(string) error {
-	return func(sv string) error {
-		if sv != "" {
-			return fmt.Errorf("flag does not take an argument")
-		}
-		m[lvl] = true
-		return nil
 	}
 }

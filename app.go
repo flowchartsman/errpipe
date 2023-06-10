@@ -22,13 +22,13 @@ type appModel struct {
 
 func newApp(config appConfig) appModel {
 	return appModel{
-		messageQueue: newMessageReader(),
+		messageQueue: startMessageReader(),
 		levels: map[logLevel]bool{
 			lvlError: true,
 			lvlWarn:  config.displayWarning,
 			lvlInfo:  config.displayInfo,
 		},
-		am: NewActivityMonitor(10),
+		am: NewActivityMonitor(20),
 	}
 }
 
@@ -46,10 +46,13 @@ func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case logMessage:
 		if msg.lvl == final {
-			return m, tea.Quit
+			return m, tea.Sequence(
+				tea.Println(m.am.Summarize()),
+				tea.Quit,
+			)
 		}
 		return m, tea.Batch(
-			m.am.Tick(),
+			m.am.Measure(msg),
 			m.Filter(msg),
 			m.nextMessage(),
 		)

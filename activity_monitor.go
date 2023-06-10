@@ -14,6 +14,7 @@ type activityMonitor struct {
 	width   int
 	lastMsg time.Time
 	plot    *Microplot
+	counts  map[logLevel]int
 }
 
 func NewActivityMonitor(width int) *activityMonitor {
@@ -26,6 +27,7 @@ func NewActivityMonitor(width int) *activityMonitor {
 			Interval: 250 * time.Millisecond,
 			Style:    NewBraille(true),
 		}),
+		counts: map[logLevel]int{},
 	}
 }
 
@@ -40,6 +42,10 @@ func (am *activityMonitor) View() string {
 		am.idle = true
 		am.plot.Pause()
 	}
+	for lvl := lvlError; lvl > lvlNone; lvl-- {
+		sb.WriteString(lvl.format("%s", lvl.short()))
+		sb.WriteString(fmt.Sprintf(":%d ", am.counts[lvl]))
+	}
 	sb.WriteString("[")
 	sb.WriteString(am.plot.String())
 	sb.WriteString("]")
@@ -49,7 +55,16 @@ func (am *activityMonitor) View() string {
 			sb.WriteString(" " + fmtDuration(since))
 		}
 	}
+	return sb.String()
+}
 
+func (am *activityMonitor) Summarize() string {
+	var sb strings.Builder
+	sb.WriteString("\n")
+	for lvl := lvlError; lvl > lvlNone; lvl-- {
+		sb.WriteString(lvl.format("%s", lvl.short()))
+		sb.WriteString(fmt.Sprintf(":%d ", am.counts[lvl]))
+	}
 	return sb.String()
 }
 
@@ -57,8 +72,12 @@ func (am *activityMonitor) Update(msg tea.Msg) (*activityMonitor, tea.Cmd) {
 	return am, nil
 }
 
-func (am *activityMonitor) Tick() tea.Cmd {
+func (am *activityMonitor) Measure(msg logMessage) tea.Cmd {
 	am.lastMsg = time.Now()
+	if msg.continuation {
+		return nil
+	}
+	am.counts[msg.lvl]++
 	am.idle = false
 	am.plot.Measure(1)
 	return nil

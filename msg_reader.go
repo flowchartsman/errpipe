@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/acarl005/stripansi"
-	"github.com/charmbracelet/lipgloss"
 )
 
 var (
@@ -19,25 +18,10 @@ var (
 	rxLeadSp = regexp.MustCompile(`^\s+`)
 )
 
-func isContinuation(rawMsg string) bool {
-	return rawMsg == "" || rxLeadSp.MatchString(rawMsg)
-}
-
 func colorize(msg string, loc []int, lvl logLevel) string {
-	var (
-		style lipgloss.Style
-		sb    strings.Builder
-	)
-	switch lvl {
-	case lvlError:
-		style = errStyle
-	case lvlWarn:
-		style = warnStyle
-	case lvlInfo:
-		style = infoStyle
-	}
+	var sb strings.Builder
 	sb.WriteString(msg[:loc[0]])
-	sb.WriteString(style.Render(msg[loc[0]:loc[1]]))
+	sb.WriteString(lvl.format(msg[loc[0]:loc[1]]))
 	sb.WriteString(msg[loc[1]:])
 	return sb.String()
 }
@@ -57,33 +41,29 @@ func getLeveledMsg(msg string) logMessage {
 		}
 		msg = colorize(msg, pfxLoc, lvl)
 	}
-	return logMessage{lvl, msg}
+	return logMessage{
+		lvl: lvl,
+		msg: msg,
+	}
 }
 
-var (
-	errStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#D24334"))
-	warnStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#EABA4C"))
-	infoStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#123B68"))
-)
-
 // probably want err return
-func newMessageReader() <-chan logMessage {
+func startMessageReader() <-chan logMessage {
 	out := make(chan logMessage, 100)
 	go func() {
 		lastLvl := lvlNone
 		sc := bufio.NewScanner(os.Stdin)
 		for sc.Scan() {
 			rawMsg := stripansi.Strip(sc.Text())
-			// if isContinuation(rawMsg) {
-			// 	out <- logMessage{lastLvl, rawMsg}
-			// 	continue
-			// }
-			msg := getLeveledMsg(rawMsg)
-			if msg.lvl == lvlNone {
-				msg.lvl = lastLvl
+			logmsg := getLeveledMsg(rawMsg)
+			if logmsg.lvl == lvlNone {
+				logmsg.continuation = true
+				if logmsg.msg != "" {
+					logmsg.lvl = lastLvl
+				}
 			}
-			lastLvl = msg.lvl
-			out <- msg
+			lastLvl = logmsg.lvl
+			out <- logmsg
 		}
 		close(out)
 		if sc.Err() != nil {

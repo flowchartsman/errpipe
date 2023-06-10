@@ -47,9 +47,8 @@ func getLeveledMsg(msg string) logMessage {
 	}
 }
 
-// probably want err return
 func startMessageReader() <-chan logMessage {
-	out := make(chan logMessage, 100)
+	out := make(chan logMessage)
 	go func() {
 		lastLvl := lvlNone
 		sc := bufio.NewScanner(os.Stdin)

@@ -15,7 +15,7 @@ var (
 	rxError  = regexp.MustCompile(`(?i)err(or)?`)
 	rxWarn   = regexp.MustCompile(`(?i)warn(ing)?`)
 	rxInfo   = regexp.MustCompile(`(?i)info?`)
-	rxLeadSp = regexp.MustCompile(`^\s+`)
+	rxSpc    = regexp.MustCompile(`^s*$`)
 )
 
 func colorize(msg string, loc []int, lvl logLevel) string {
@@ -55,9 +55,13 @@ func startMessageReader() <-chan logMessage {
 		for sc.Scan() {
 			rawMsg := stripansi.Strip(sc.Text())
 			logmsg := getLeveledMsg(rawMsg)
-			if logmsg.lvl == lvlNone {
+			// empty lines reset the level
+			if rxSpc.MatchString(logmsg.msg) {
 				logmsg.continuation = true
-				if logmsg.msg != "" {
+				logmsg.lvl = lvlNone
+			} else {
+				// if message doesn't have level, but last message was leveled, assume continuation
+				if logmsg.lvl == lvlNone && lastLvl != lvlNone {
 					logmsg.lvl = lastLvl
 				}
 			}

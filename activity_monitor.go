@@ -43,17 +43,21 @@ func (am *activityMonitor) View() string {
 		am.plot.Pause()
 	}
 	sb.WriteString("[")
-	sb.WriteString(am.plot.String())
-	sb.WriteString("]")
-	for lvl := lvlError; lvl > lvlNone; lvl-- {
+	if am.idle && since > 5*time.Second {
+		sb.WriteString("⏳")
+		sb.WriteString(" " + fmtDuration(since))
+		sb.WriteString(strings.Repeat(" ", am.width-sb.Len()))
+	} else {
+		sb.WriteString(am.plot.String())
+	}
+	sb.WriteString("] ")
+	for lvl := lvlError; lvl >= lvlNone; lvl-- {
+		// dont print "none" messages until they've occurred
+		if lvl == lvlNone && am.counts[lvl] == 0 {
+			continue
+		}
 		sb.WriteString(lvl.format("%s", lvl.short()))
 		sb.WriteString(fmt.Sprintf(":%d ", am.counts[lvl]))
-	}
-	if am.idle {
-		sb.WriteString("⏳")
-		if since > 5*time.Second {
-			sb.WriteString(" " + fmtDuration(since))
-		}
 	}
 	return sb.String()
 }
@@ -61,7 +65,11 @@ func (am *activityMonitor) View() string {
 func (am *activityMonitor) Summarize() string {
 	var sb strings.Builder
 	sb.WriteString("\n")
-	for lvl := lvlError; lvl > lvlNone; lvl-- {
+	for lvl := lvlError; lvl >= lvlNone; lvl-- {
+		// dont print "none" messages unless they've occurred
+		if lvl == lvlNone && am.counts[lvl] == 0 {
+			continue
+		}
 		sb.WriteString(lvl.format("%s", lvl.short()))
 		sb.WriteString(fmt.Sprintf(":%d ", am.counts[lvl]))
 	}

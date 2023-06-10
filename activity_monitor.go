@@ -28,7 +28,7 @@ func NewActivityMonitor(width int) *activityMonitor {
 		lastMsg: time.Now(),
 		plot: NewMicroplot(MicroplotConf{
 			Width:    width - 2,
-			Max:      4,
+			Max:      20,
 			Interval: 250 * time.Millisecond,
 			Style:    NewBraille(true),
 		}),

@@ -42,13 +42,13 @@ func (am *activityMonitor) View() string {
 		am.idle = true
 		am.plot.Pause()
 	}
+	sb.WriteString("[")
+	sb.WriteString(am.plot.String())
+	sb.WriteString("]")
 	for lvl := lvlError; lvl > lvlNone; lvl-- {
 		sb.WriteString(lvl.format("%s", lvl.short()))
 		sb.WriteString(fmt.Sprintf(":%d ", am.counts[lvl]))
 	}
-	sb.WriteString("[")
-	sb.WriteString(am.plot.String())
-	sb.WriteString("]")
 	if am.idle {
 		sb.WriteString("⏳")
 		if since > 5*time.Second {

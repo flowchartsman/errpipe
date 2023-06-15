@@ -10,6 +10,10 @@ import (
 type appConfig struct {
 	displayWarning bool
 	displayInfo    bool
+	width          int
+	style          string
+	max            int
+	intervalMs     int
 }
 
 type appModel struct {
@@ -28,7 +32,7 @@ func newApp(config appConfig) appModel {
 			lvlWarn:  config.displayWarning,
 			lvlInfo:  config.displayInfo,
 		},
-		am: NewActivityMonitor(20),
+		am: NewActivityMonitor(config),
 	}
 }
 

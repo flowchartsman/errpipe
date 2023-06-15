@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	rxHasPfx = regexp.MustCompile(`(?i)^\s*[ \[(|]?(err(or)?|warn(ing)?|info?)[ \])|]`)
+	rxHasPfx = regexp.MustCompile(`(?i)^\s*[\[(|]?(err(or)?|warn(ing)?|info?)[ \])|]`)
 	rxError  = regexp.MustCompile(`(?i)err(or)?`)
 	rxWarn   = regexp.MustCompile(`(?i)warn(ing)?`)
 	rxInfo   = regexp.MustCompile(`(?i)info?`)

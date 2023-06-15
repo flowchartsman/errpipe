@@ -26,21 +26,10 @@ type Microplot struct {
 }
 
 func NewMicroplot(conf MicroplotConf) *Microplot {
-	if conf.Width <= 0 {
-		conf.Width = 10
-	}
-	if conf.Interval <= 0 {
-		conf.Interval = 250 * time.Millisecond
-	}
-	if conf.Max < 4 {
-		conf.Max = 4
-	}
-	if _, ok := conf.Style.(*Braille); ok {
-		conf.Width *= 2
-	}
+	adjWidth := conf.Style.NewWidth(conf.Width)
 	m := &Microplot{
 		max:      conf.Max,
-		buckets:  make([]int, conf.Width),
+		buckets:  make([]int, adjWidth),
 		ticker:   time.NewTicker(conf.Interval),
 		interval: conf.Interval,
 		style:    conf.Style,
@@ -105,4 +94,5 @@ func (m *Microplot) String() string {
 
 type Style interface {
 	Display(vals []int, startIdx int, max int) string
+	NewWidth(int) int
 }

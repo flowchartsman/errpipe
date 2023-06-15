@@ -17,21 +17,40 @@ type activityMonitor struct {
 	counts  map[logLevel]int
 }
 
-func NewActivityMonitor(width int) *activityMonitor {
+func NewActivityMonitor(config appConfig) *activityMonitor {
+	var style Style
+	switch config.style {
+	case "braille-line":
+		style = NewBraille(false, false)
+	case "braille4-line":
+		style = NewBraille(false, true)
+	case "braille4":
+		style = NewBraille(true, true)
+	case "block":
+		style = Block
+	case "legacy":
+		style = TwoTuplePlot{LegacyLine}
+	case "legacy-block":
+		style = TwoTuplePlot{LegacyBlock}
+	case "legacy-block-line":
+		style = TwoTuplePlot{LegacyBlockLine}
+	default:
+		style = NewBraille(true, false)
+	}
 	return &activityMonitor{
-		width:   width,
+		width:   config.width,
 		lastMsg: time.Now(),
 		plot: NewMicroplot(MicroplotConf{
-			Width:    width - 2,
+			Width:    config.width - 2, // for the brackets
 			Max:      20,
 			Interval: 250 * time.Millisecond,
-			Style:    NewBraille(true),
+			Style:    style,
 		}),
 		counts: map[logLevel]int{},
 	}
 }
 
-func (am *activityMonitor) Init() tea.Cmd {
+func (*activityMonitor) Init() tea.Cmd {
 	return nil
 }
 

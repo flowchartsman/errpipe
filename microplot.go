@@ -9,7 +9,7 @@ type MicroplotConf struct {
 	Width    int
 	Max      int
 	Interval time.Duration
-	Style    Style
+	Style    string
 }
 
 type Microplot struct {
@@ -26,13 +26,32 @@ type Microplot struct {
 }
 
 func NewMicroplot(conf MicroplotConf) *Microplot {
-	adjWidth := conf.Style.NewWidth(conf.Width)
+	var style Style
+	switch conf.Style {
+	case "braille-line":
+		style = NewBraille(false, false)
+	case "braille4-line":
+		style = NewBraille(false, true)
+	case "braille4":
+		style = NewBraille(true, true)
+	case "block":
+		style = Block
+	case "legacy":
+		style = TwoTuplePlot{LegacyLine}
+	case "legacy-block":
+		style = TwoTuplePlot{LegacyBlock}
+	case "legacy-block-line":
+		style = TwoTuplePlot{LegacyBlockLine}
+	default:
+		style = NewBraille(true, false)
+	}
+	adjWidth := style.NewWidth(conf.Width)
 	m := &Microplot{
 		max:      conf.Max,
 		buckets:  make([]int, adjWidth),
 		ticker:   time.NewTicker(conf.Interval),
 		interval: conf.Interval,
-		style:    conf.Style,
+		style:    style,
 	}
 	go func() {
 		for range m.ticker.C {

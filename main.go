@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -14,10 +15,15 @@ func main() {
 	flag.BoolVar(&config.displayWarning, "w", false, "display warnings")
 	flag.BoolVar(&config.displayInfo, "i", false, "display info")
 	flag.Parse()
-	config.max = ienvd("ERRPIPE_MAX", 3)
+	config.max = ienvd("ERRPIPE_MAX", 20)
 	config.width = ienvd("ERRPIPE_WIDTH", 20)
 	config.style = envd("ERRPIPE_STYLE", "braille")
 	config.intervalMs = ienvd("ERRPIPE_INTERVAL", 250)
+	idleSeconds := ienvd("ERRPIPE_IDLE", 5)
+	if idleSeconds > 0 {
+		config.idleDuration = time.Duration(idleSeconds) * time.Second
+	}
+
 	_, err := tea.NewProgram(
 		newApp(config),
 	).Run()

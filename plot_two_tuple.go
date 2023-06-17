@@ -16,13 +16,13 @@ var twoTupleChars = [...][4][4]rune{
 		{'🬽', '🬭', '🭆', '🭄'},
 		{'🬿', '🭑', '🬹', '🭂'},
 		{'🭀', '🭏', '🭍', '🮋'},
-	},
-	LegacyBlock: {
+	}, //               ⬆ sub
+	LegacyBlock: { /*    ⬇ sub */
 		{' ', '🬞', '🬦', '▐'},
 		{'🬏', '🬭', '🬵', '🬷'},
 		{'🬓', '🬱', '🬹', '🬻'},
 		{'▌', '🬲', '🬺', '🮋'},
-	},
+	}, /*⬆ sub */
 	LegacyBlockLine: {
 		{' ', '🬞', '🬦', '🬘'},
 		{'🬏', '🬭', '🬖', '🬔'},
@@ -37,10 +37,17 @@ type TwoTuplePlot struct {
 
 func (t TwoTuplePlot) Display(vals []int, startIdx int, max int) string {
 	var sb strings.Builder
-	last := trns(vals[0], max, 3)
+	last := trns(vals[startIdx], max, 3)
+	first := true
 	iter(vals, startIdx, func(v int) {
+		if first {
+			first = false
+			return
+		}
 		v = trns(v, max, 3)
-		sb.WriteRune(twoTupleChars[t.style][last][v])
+		if !first {
+			sb.WriteRune(twoTupleChars[t.style][last][v])
+		}
 		last = v
 	})
 	return sb.String()
@@ -60,7 +67,14 @@ BLOCK SEXTANT-123456 - replacement: '█' FULL BLOCK or '🮋' LEGACY LEFT 3/4 B
 None of these are really good though.
 Why can't the Unicode Consortium just be thorough?
 
-TODO: consider smoothing code instead of 0<->3 0<->2 and 1<->3 transitions so that
+LEGACY LINEGRAPH CHARS:
+🬼 🬽 🬾 🬿 🭀 🭁 🭂 🭃 🭄 🭅 🭆 🭇 🭈 🭉 🭊 🭋 🭌 🭍 🭎 🭏
+🭐 🭑 🭒 🭓 🭔 🭕 🭖 🭗 🭘 🭙 🭚 🭛 🭜 🭝 🭞 🭟
+🭠 🭡 🭢 🭣 🭤 🭥 🭦 🭧
+*/
+
+/*
+TODO: smoothing code instead of 0<->3 0<->2 and 1<->3 transitions so that
 0->3->0->0 goes from
 `🬘🬣 `
 to:

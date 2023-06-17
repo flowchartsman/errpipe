@@ -17,14 +17,18 @@ func NewBraille(barchart bool, fourUp bool) *Braille {
 func (b *Braille) Display(vals []int, startIdx int, max int) string {
 	var sb strings.Builder
 	left := true
+	rnge := 3
+	if b.fourUp {
+		rnge = 4
+	}
 	var lv, rv int
 	iter(vals, startIdx, func(v int) {
 		if left {
-			lv = trns(v, max, 4)
+			lv = trns(v, max, rnge)
 			left = false
 			return
 		}
-		rv = trns(v, max, 4)
+		rv = trns(v, max, rnge)
 		if !b.fourUp {
 			if lv > 0 {
 				lv++

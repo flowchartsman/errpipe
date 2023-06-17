@@ -10,59 +10,44 @@ import (
 )
 
 type activityMonitor struct {
-	idle    bool
-	width   int
-	lastMsg time.Time
-	plot    *Microplot
-	counts  map[logLevel]int
+	idle         bool
+	width        int
+	lastMsg      time.Time
+	idleDuration time.Duration
+	plot         *Microplot
+	counts       map[logLevel]int
 }
 
 func NewActivityMonitor(config appConfig) *activityMonitor {
-	var style Style
-	switch config.style {
-	case "braille-line":
-		style = NewBraille(false, false)
-	case "braille4-line":
-		style = NewBraille(false, true)
-	case "braille4":
-		style = NewBraille(true, true)
-	case "block":
-		style = Block
-	case "legacy":
-		style = TwoTuplePlot{LegacyLine}
-	case "legacy-block":
-		style = TwoTuplePlot{LegacyBlock}
-	case "legacy-block-line":
-		style = TwoTuplePlot{LegacyBlockLine}
-	default:
-		style = NewBraille(true, false)
-	}
 	return &activityMonitor{
-		width:   config.width,
-		lastMsg: time.Now(),
+		width:        config.width,
+		lastMsg:      time.Now(),
+		idleDuration: config.idleDuration,
 		plot: NewMicroplot(MicroplotConf{
 			Width:    config.width - 2, // for the brackets
-			Max:      20,
-			Interval: 250 * time.Millisecond,
-			Style:    style,
+			Max:      config.max,
+			Interval: time.Duration(config.intervalMs) * time.Millisecond,
+			Style:    config.style,
 		}),
 		counts: map[logLevel]int{},
 	}
 }
 
 func (*activityMonitor) Init() tea.Cmd {
-	return nil
+	return tea.HideCursor
 }
 
 func (am *activityMonitor) View() string {
 	var sb strings.Builder
 	since := time.Since(am.lastMsg)
-	if !am.idle && since > 2*time.Second {
-		am.idle = true
-		am.plot.Pause()
+	if am.idleDuration > 0 {
+		if !am.idle && since > 2*time.Second {
+			am.idle = true
+			am.plot.Pause()
+		}
 	}
 	sb.WriteString("[")
-	if am.idle && since > 5*time.Second {
+	if am.idle && since > am.idleDuration {
 		sb.WriteString("⏳")
 		sb.WriteString(" " + fmtDuration(since))
 		sb.WriteString(strings.Repeat(" ", am.width-sb.Len()))
@@ -148,8 +133,8 @@ func iter(buckets []int, start int, f func(v int)) {
 
 func trns(v, oldmax, newmax int) int {
 	nv := v * newmax / oldmax
-	if v > 0 && nv == 0 {
-		return 1
-	}
+	// if v > 0 && nv == 0 {
+	// 	return 1
+	// }
 	return nv
 }

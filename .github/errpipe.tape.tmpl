@@ -1,0 +1,33 @@
+Output .github/{{.DemoName}}{{if .Suffix}}-{{.Suffix}}{{end}}.gif
+Require go
+Require git
+Set Framerate {{if .Framerate}}{{.Framerate}}{{else}}60{{end}}
+{{if .WindowBar}}Set WindowBar {{.WindowBar}}{{end}}
+Set Theme "Gruvbox Dark"
+Set FontFamily "BigBlueTermPlus Nerd Font Mono"
+Set FontSize {{.FontSize}}
+Set Width {{.Width}}
+Set Height {{.Height}}
+Set Padding 5
+
+Hide
+{{range $var, $val := .Env}}
+Type 'export {{$var}}={{$val}}'
+Enter
+{{end}}
+Type 'alias make="go run .github/demo.go{{ Args .DemoArgs}}"'
+Enter
+Type 'export PATH={{.EpLoc}}:$PATH'
+Enter
+Type 'clear'
+Enter
+Sleep 600ms
+{{range .Pre}}
+{{.}}
+{{end}}  
+Type 'make thebuild | errpipe{{ Args .EPArgs }}'
+Enter
+{{range .Post}}
+{{.}}
+{{end}}
+Sleep {{.DemoLength}}s

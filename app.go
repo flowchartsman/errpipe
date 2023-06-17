@@ -14,6 +14,7 @@ type appConfig struct {
 	style          string
 	max            int
 	intervalMs     int
+	idleDuration   time.Duration
 }
 
 type appModel struct {
